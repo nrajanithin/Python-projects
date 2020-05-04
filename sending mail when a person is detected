@@ -1,0 +1,56 @@
+import time
+from imageai.Detection import ObjectDetection
+import os
+import numpy as np
+import cv2
+execution_path = os.getcwd()
+x = 0
+while True:
+    camera = cv2.VideoCapture(0)
+    for i in range(2):
+        return_value, image = camera.read()
+        cv2.imwrite('image.jpg', image)
+    del(camera)
+    detector = ObjectDetection()
+    detector.setModelTypeAsRetinaNet()
+    detector.setModelPath( os.path.join(execution_path , "resnet50_coco_best_v2.0.1.h5"))
+    detector.loadModel()
+    detections = detector.detectObjectsFromImage(input_image=os.path.join(execution_path , "image.jpg"), output_image_path=os.path.join(execution_path , "imagenew.jpg"))
+
+    for eachObject in detections:
+        print(eachObject["name"] , " : " , eachObject["percentage_probability"] )
+        if 'person'==eachObject["name"]:
+            x=1
+            print("break")
+            SendMail('image.jpg')
+            break
+    os.remove('image.jpg')
+    os.remove('imagenew.jpg')
+    if x==1:
+        break
+ import os
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.image import MIMEImage
+from email.mime.multipart import MIMEMultipart
+
+
+def SendMail(ImgFileName):
+    img_data = open(ImgFileName, 'rb').read()
+    msg = MIMEMultipart()
+    msg['Subject'] = 'subject'
+    msg['From'] = 'SENDER@gmail.com'
+    msg['To'] = 'RECEIVER@gmail.com'
+
+    text = MIMEText("test")
+    msg.attach(text)
+    image = MIMEImage(img_data, name=os.path.basename(ImgFileName))
+    msg.attach(image)
+
+    s = smtplib.SMTP('smtp.gmail.com:587')
+    s.ehlo()
+    s.starttls()
+    s.ehlo()
+    s.login('SENDER@gmail.com', 'PASSWORD')
+    s.sendmail('SENDER', 'RECEIVER', msg.as_string())
+    s.quit()
